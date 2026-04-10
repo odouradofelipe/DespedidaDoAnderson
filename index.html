@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Drinking Game - Quem é mais provável?</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #111, #1c1c1c);
+    color: #fff;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    text-align: center;
+    color: #ffcc00;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #ccc;
+    margin-bottom: 24px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 20px;
+  }
+
+  .card {
+    background: #1f1f1f;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+
+  .card h2 {
+    margin-top: 0;
+    color: #ffcc00;
+    font-size: 22px;
+  }
+
+  .question {
+    font-size: 24px;
+    line-height: 1.4;
+    margin-bottom: 18px;
+  }
+
+  .pill {
+    display: inline-block;
+    background: #ffcc00;
+    color: #000;
+    font-weight: bold;
+    padding: 8px 14px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+
+  .punishment {
+    background: rgba(255, 204, 0, 0.08);
+    border: 1px dashed rgba(255, 204, 0, 0.4);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 18px;
+    color: #f5f5f5;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  button {
+    border: none;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s ease;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+  }
+
+  .primary {
+    background: #ffcc00;
+    color: #000;
+  }
+
+  .secondary {
+    background: #2d2d2d;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .players-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: #121212;
+    color: #fff;
+    font-size: 15px;
+  }
+
+  .players-list,
+  .scoreboard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .player-chip,
+  .score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #2a2a2a;
+    border-radius: 12px;
+  }
+
+  .score-item strong {
+    font-size: 16px;
+  }
+
+  .score-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #ddd;
+  }
+
+  .vote-area {
+    margin-top: 20px;
+  }
+
+  .vote-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .vote-buttons button {
+    background: #333;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .history {
+    margin-top: 18px;
+    font-size: 14px;
+    color: #ccc;
+    line-height: 1.5;
+  }
+
+  .empty {
+    color: #999;
+    font-style: italic;
+  }
+
+  .danger {
+    background: #3a1f1f;
+    color: #ffb3b3;
+    border: 1px solid rgba(255, 120, 120, 0.2);
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+
+    .question {
+      font-size: 21px;
+    }
+  }
+
+  .game-over-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+  }
+
+  .game-over-overlay.hidden {
+    display: none;
+  }
+
+  .game-over-box {
+    position: relative;
+    width: min(92vw, 520px);
+    background: linear-gradient(180deg, #1d1d1d, #101010);
+    border: 2px solid rgba(255, 204, 0, 0.35);
+    border-radius: 24px;
+    padding: 36px 24px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255, 204, 0, 0.15);
+    animation: popIn 0.35s ease;
+    overflow: hidden;
+  }
+
+  .game-over-box h2 {
+    margin-top: 0;
+    font-size: 34px;
+    color: #ffcc00;
+    animation: pulseTitle 1.1s infinite alternate;
+  }
+
+  .game-over-name {
+    font-size: 36px;
+    font-weight: bold;
+    color: #fff;
+    margin: 18px 0 8px;
+    word-break: break-word;
+  }
+
+  .game-over-text {
+    font-size: 24px;
+    color: #ffcc00;
+    margin-bottom: 28px;
+    line-height: 1.35;
+  }
+
+  .game-over-btn {
+    font-size: 18px;
+    padding: 16px 22px;
+  }
+
+  .confetti {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    opacity: 0.9;
+    animation: fall 2.2s linear infinite;
+  }
+
+  .confetti-1 {
+    left: 18%;
+    top: -20px;
+    background: #ffcc00;
+    animation-delay: 0s;
+  }
+
+  .confetti-2 {
+    left: 50%;
+    top: -30px;
+    background: #ffffff;
+    animation-delay: 0.5s;
+  }
+
+  .confetti-3 {
+    left: 78%;
+    top: -25px;
+    background: #ff8a00;
+    animation-delay: 1s;
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0.82);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulseTitle {
+    0% {
+      transform: scale(1);
+      text-shadow: 0 0 0 rgba(255, 204, 0, 0.1);
+    }
+    100% {
+      transform: scale(1.04);
+      text-shadow: 0 0 18px rgba(255, 204, 0, 0.35);
+    }
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(-10px) rotate(0deg);
+    }
+    100% {
+      transform: translateY(340px) rotate(360deg);
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍻 Quem é mais provável? 🍻</h1>
+    <p class="subtitle">Sorteie uma frase, vote no escolhido e some as doses no placar.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Rodada</h2>
+        <div id="currentCard">
+          <div class="question">Clique em <strong>Sortear rodada</strong> para começar.</div>
+          <div class="pill">Doses: 0</div>
+          <div class="punishment">Prenda: aguardando próxima vítima.</div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" onclick="sortear()">Sortear rodada</button>
+          <button class="secondary" onclick="resetarPlacar()">Resetar placar</button>
+        </div>
+
+        <div class="vote-area">
+          <h2>Quem ganhou a rodada?</h2>
+          <p id="voteHint" class="empty">Cadastre jogadores para habilitar a votação.</p>
+          <div id="voteButtons" class="vote-buttons"></div>
+          <div id="warning"></div>
+        </div>
+
+        <div class="history" id="history">
+          Nenhuma rodada registrada ainda.
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2>Jogadores</h2>
+
+        <div class="players-form">
+          <input type="text" id="playerName" placeholder="Digite o nome do jogador" />
+          <button class="primary" onclick="adicionarJogador()">Adicionar</button>
+        </div>
+
+        <div id="playersList" class="players-list">
+          <div class="empty">Nenhum jogador cadastrado.</div>
+        </div>
+
+        <h2 style="margin-top: 24px;">Placar</h2>
+        <div id="scoreboard" class="scoreboard">
+          <div class="empty">O placar aparecerá aqui.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="gameOverOverlay" class="game-over-overlay hidden">
+    <div class="game-over-box">
+      <div class="confetti confetti-1"></div>
+      <div class="confetti confetti-2"></div>
+      <div class="confetti confetti-3"></div>
+
+      <h2>🏁 Fim de Jogo</h2>
+      <p id="gameOverName" class="game-over-name">Fulano</p>
+      <p class="game-over-text">é o amigo de 💩 da rodada!</p>
+
+      <button class="primary game-over-btn" onclick="resetarPlacar()">
+        Reiniciar partida
+      </button>
+    </div>
+  </div>
+
+<script>
+  const frases = [
+    {
+      texto: "Quem é mais provável de mandar mensagem que vai se arrepender no dia seguinte?",
+      doses: 2,
+      prenda: "Imite um áudio bêbado de WhatsApp por cinco segundos."
+    },
+    {
+      texto: "Quem é mais provável de negar tudo mesmo com prova?",
+      doses: 3,
+      prenda: "Faça um discurso dramático de defesa como se estivesse num tribunal."
+    },
+    {
+      texto: "Quem é mais provável de dar PT no próprio casamento?",
+      doses: 3,
+      prenda: "Dance uma valsa sozinho(a) olhando para o horizonte."
+    },
+    {
+      texto: "Quem é mais provável de causar treta entre amigos?",
+      doses: 1,
+      prenda: "Encene uma mini discussão falsa apontando pro nada."
+    },
+    {
+      texto: "Quem é mais provável de postar algo vergonhoso?",
+      doses: 1,
+      prenda: "Faça uma selfie cringe imaginária e pose por três segundos."
+    },
+    {
+      texto: "Quem é mais provável de parar de sair com os amigos porque casou?",
+      doses: 2,
+      prenda: "Declare saudade da vida de solteiro como se fosse novela."
+    },
+    {
+      texto: "Quem é mais provável de falar demais quando bebe?",
+      doses: 1,
+      prenda: "Conte uma história sem pé nem cabeça com total confiança."
+    },
+    {
+      texto: "Quem é mais provável de implorar pra voltar?",
+      doses: 1,
+      prenda: "Faça um pedido de reconciliação olhando para a churrasqueira."
+    },
+    {
+      texto: "Quem é mais provável de pagar mico dançando?",
+      doses: 2,
+      prenda: "Dance por dez segundos como se estivesse no auge do palco."
+    },
+    {
+      texto: "Quem é mais provável de mentir pra sair com os amigos?",
+      doses: 2,
+      prenda: "Invente uma desculpa esfarrapada ao vivo com voz séria."
+    },
+    {
+      texto: "Quem é mais provável de acordar sem lembrar de nada?",
+      doses: 2,
+      prenda: "Olhe em volta e pergunte 'onde eu tô?' com cara de susto."
+    },
+    {
+      texto: "Quem é mais provável de se humilhar por alguém?",
+      doses: 1,
+      prenda: "Faça uma declaração romântica exageradíssima para um copo."
+    },
+    {
+      texto: "Quem é mais provável de exagerar histórias?",
+      doses: 3,
+      prenda: "Conte um feito absurdo como se fosse 100% real."
+    },
+    {
+      texto: "Quem é mais provável de mandar nude por engano?",
+      doses: 2,
+      prenda: "Faça pose de ensaio fotográfico super confiante por cinco segundos."
+    },
+    {
+      texto: "Quem é mais provável de dormir no sofá depois de briga?",
+      doses: 2,
+      prenda: "Deite no chão por cinco segundos como se fosse seu cantinho."
+    },
+    {
+      texto: "Quem é mais provável de se apaixonar rápido demais?",
+      doses: 1,
+      prenda: "Diga 'acho que agora vai' olhando para alguém aleatório."
+    },
+    {
+      texto: "Quem é mais provável de sair sem dinheiro?",
+      doses: 2,
+      prenda: "Peça algo 'fiado' para um amigo com máxima cara de pau."
+    },
+    {
+      texto: "Quem é mais provável de causar vergonha alheia?",
+      doses: 2,
+      prenda: "Mande uma cantada terrível para a plateia."
+    },
+    {
+      texto: "Quem é mais provável de mentir sobre o desempenho na cama?",
+      doses: 3,
+      prenda: "Faça pose de galã ou diva por cinco segundos em absoluto silêncio."
+    },
+    {
+      texto: "Quem é mais provável de ser bloqueado por ex?",
+      doses: 2,
+      prenda: "Encene um término dramático com direito a mão na testa."
+    },
+    {
+      texto: "Quem é mais provável de esquecer onde estacionou?",
+      doses: 1,
+      prenda: "Procure um carro imaginário completamente desesperado."
+    },
+    {
+      texto: "Quem é mais provável de provocar briga?",
+      doses: 1,
+      prenda: "Faça uma provocação boba e termine com 'brincadeira!'."
+    },
+    {
+      texto: "Quem é mais provável de gastar todo o salário em uma noite?",
+      doses: 1,
+      prenda: "Aja como milionário por dez segundos distribuindo promessas falsas."
+    },
+    {
+      texto: "Quem é mais provável de ser o último a ir embora?",
+      doses: 2,
+      prenda: "Abrace alguém e diga 'eu não tô pronto pra ir'."
+    },
+    {
+      texto: "Quem é mais provável de virar meme no grupo?",
+      doses: 2,
+      prenda: "Faça uma pose congelada digna de print."
+    },
+    {
+      texto: "Quem é mais provável de apelar por brincadeira?",
+      doses: 3,
+      prenda: "Invente uma regra maluca e tente defendê-la por dez segundos."
+    },
+    {
+      texto: "Quem é mais provável de fazer amizade com desconhecidos?",
+      doses: 1,
+      prenda: "Se apresente como se estivesse em entrevista de emprego."
+    },
+    {
+      texto: "Quem é mais provável de inventar desculpa esfarrapada?",
+      doses: 1,
+      prenda: "Crie uma desculpa tão ruim que ninguém conseguiria acreditar."
+    },
+    {
+      texto: "Quem é mais provável de acordar no lugar errado?",
+      doses: 2,
+      prenda: "Finja acordar confuso e pergunte pelo 'quarto 12'."
+    },
+    {
+      texto: "Quem é mais provável de pedir desculpa mesmo estando certo?",
+      doses: 1,
+      prenda: "Peça desculpa para alguém sem explicar o motivo."
+    },
+    {
+      texto: "Quem é mais provável de soltar aquela verdade na hora errada?",
+      doses: 2,
+      prenda: "Solte uma 'verdade' aleatória com cara de revelação bombástica."
+    },
+    {
+      texto: "Quem é mais provável de bancar o rico com os amigos?",
+      doses: 2,
+      prenda: "Fale como magnata e cumprimente todos como celebridade."
+    },
+    {
+      texto: "Quem é mais provável de julgar os outros e fazer pior?",
+      doses: 1,
+      prenda: "Critique algo e em seguida imite exatamente aquilo."
+    },
+    {
+      texto: "Quem é mais provável de virar uma loba no cio depois de beber?",
+      doses: 1,
+      prenda: "Uive para a lua imaginária com total entrega."
+    },
+    {
+      texto: "Quem é mais provável de mandar mensagem constrangedora?",
+      doses: 1,
+      prenda: "Simule uma mensagem vergonhosa em voz alta."
+    },
+    {
+      texto: "Quem é mais provável de ser o primeiro a separar?",
+      doses: 1,
+      prenda: "Faça um discurso de término digno de novela das nove."
+    },
+    {
+      texto: "Quem é mais provável de revelar segredos íntimos depois de bêbado?",
+      doses: 2,
+      prenda: "Conte um segredo leve ou inventado como se fosse ultra confidencial."
+    },
+    {
+      texto: "Quem é mais provável de ir pra guerra com espada de balão/brochar?",
+      doses: 3,
+      prenda: "Lute por cinco segundos com uma espada invisível."
+    },
+    {
+      texto: "Quem é mais provável de esquecer data importante?",
+      doses: 1,
+      prenda: "Parabenize alguém por um aniversário totalmente inventado."
+    },
+    {
+      texto: "Quem é mais provável de fingir que não viu alguém conhecido?",
+      doses: 2,
+      prenda: "Vire o rosto dramaticamente e assobie como inocente."
+    },
+    {
+      texto: "Quem é mais provável de mentir e depois esquecer que mentiu?",
+      doses: 2,
+      prenda: "Conte uma versão e depois se contradiga na hora."
+    },
+    {
+      texto: "Quem é mais provável de influenciar más decisões?",
+      doses: 1,
+      prenda: "Dê um conselho horrível com postura de especialista."
+    },
+    {
+      texto: "Quem é mais provável de causar climão?",
+      doses: 2,
+      prenda: "Fique em silêncio olhando em volta por cinco segundos."
+    },
+    {
+      texto: "Quem é mais provável de encerrar a noite com um escândalo?",
+      doses: 1,
+      prenda: "Faça uma saída dramática e volte como se nada tivesse acontecido."
+    }
+  ];
+
+  let jogadores = [];
+  let rodadaAtual = null;
+  let ultimaEscolha = null;
+  let ultimoPerdedor = null;
+
+  const LIMITE_DOSES = 8;
+  let jogoEncerrado = false;
+
+  function normalizarNome(nome) {
+    return nome.trim().replace(/\s+/g, " ");
+  }
+
+  function adicionarJogador() {
+    const input = document.getElementById("playerName");
+    const nome = normalizarNome(input.value);
+
+    if (!nome) return;
+
+    const existe = jogadores.some(j => j.nome.toLowerCase() === nome.toLowerCase());
+    if (existe) {
+      mostrarAviso("Esse jogador já foi adicionado.");
+      return;
+    }
+
+    jogadores.push({
+      nome,
+      pontos: 0,
+      rodadas: 0
+    });
+
+    input.value = "";
+    limparAviso();
+    renderJogadores();
+    renderPlacar();
+    renderBotoesVoto();
+  }
+
+  function removerJogador(nome) {
+    jogadores = jogadores.filter(j => j.nome !== nome);
+    renderJogadores();
+    renderPlacar();
+    renderBotoesVoto();
+  }
+
+  function sortear() {
+    if (jogoEncerrado) {
+      mostrarAviso("O jogo acabou! Clique em reiniciar partida.");
+      return;
+    }
+
+    const indice = Math.floor(Math.random() * frases.length);
+    rodadaAtual = frases[indice];
+    ultimaEscolha = null;
+
+    document.getElementById("currentCard").innerHTML = `
+      <div class="question">${rodadaAtual.texto}</div>
+      <div class="pill">🍺 Doses: ${rodadaAtual.doses}</div>
+      <div class="punishment"><strong>Prenda:</strong> ${rodadaAtual.prenda}</div>
+    `;
+
+    limparAviso();
+  }
+
+  function aplicarRodada(nomeJogador) {
+    if (jogoEncerrado) {
+      mostrarAviso("O jogo já acabou! Clique em reiniciar partida.");
+      return;
+    }
+
+    if (!rodadaAtual) {
+      mostrarAviso("Sorteie uma rodada antes de marcar um jogador.");
+      return;
+    }
+
+    const jogador = jogadores.find(j => j.nome === nomeJogador);
+    if (!jogador) return;
+
+    jogador.pontos += rodadaAtual.doses;
+    jogador.rodadas += 1;
+    ultimaEscolha = nomeJogador;
+
+    renderPlacar();
+
+    if (jogador.pontos >= LIMITE_DOSES) {
+      jogoEncerrado = true;
+      ultimoPerdedor = jogador.nome;
+
+      document.getElementById("history").innerHTML = `
+        <strong>🏁 Fim de jogo:</strong> ${jogador.nome}<br>
+        <strong>Total:</strong> ${jogador.pontos} dose(s)<br>
+        <strong>Status:</strong> é o amigo de 💩 da rodada!
+      `;
+
+      mostrarFimDeJogo(jogador.nome);
+      return;
+    }
+
+    document.getElementById("history").innerHTML = `
+      <strong>Última rodada:</strong> ${rodadaAtual.texto}<br>
+      <strong>Escolhido(a):</strong> ${nomeJogador}<br>
+      <strong>Punição:</strong> ${rodadaAtual.doses} dose(s) + ${rodadaAtual.prenda}
+    `;
+  }
+
+  function renderJogadores() {
+    const lista = document.getElementById("playersList");
+
+    if (jogadores.length === 0) {
+      lista.innerHTML = `<div class="empty">Nenhum jogador cadastrado.</div>`;
+      return;
+    }
+
+    lista.innerHTML = jogadores.map(j => `
+      <div class="player-chip">
+        <span>${j.nome}</span>
+        <button class="secondary" onclick="removerJogador('${escapeAspas(j.nome)}')">Remover</button>
+      </div>
+    `).join("");
+  }
+
+  function renderPlacar() {
+    const placar = document.getElementById("scoreboard");
+
+    if (jogadores.length === 0) {
+      placar.innerHTML = `<div class="empty">O placar aparecerá aqui.</div>`;
+      return;
+    }
+
+    const ordenados = [...jogadores].sort((a, b) => {
+      if (b.pontos !== a.pontos) return b.pontos - a.pontos;
+      return b.rodadas - a.rodadas;
+    });
+
+    placar.innerHTML = ordenados.map((j, index) => `
+      <div class="score-item">
+        <div>
+          <strong>${index + 1}. ${j.nome}</strong>
+        </div>
+        <div class="score-badges">
+          <span class="badge">🍺 ${j.pontos} dose(s)</span>
+          <span class="badge">🎯 ${j.rodadas} rodada(s)</span>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function renderBotoesVoto() {
+    const area = document.getElementById("voteButtons");
+    const hint = document.getElementById("voteHint");
+
+    if (jogadores.length === 0) {
+      area.innerHTML = "";
+      hint.textContent = "Cadastre jogadores para habilitar a votação.";
+      return;
+    }
+
+    hint.textContent = "Clique no nome de quem foi escolhido na rodada.";
+
+    area.innerHTML = jogadores.map(j => `
+      <button onclick="aplicarRodada('${escapeAspas(j.nome)}')">${j.nome}</button>
+    `).join("");
+  }
+
+  function resetarPlacar() {
+    if (ultimoPerdedor) {
+      jogadores = jogadores.filter(j => j.nome !== ultimoPerdedor);
+    }
+
+    jogadores = jogadores.map(j => ({
+      ...j,
+      pontos: 0,
+      rodadas: 0
+    }));
+
+    rodadaAtual = null;
+    ultimaEscolha = null;
+    jogoEncerrado = false;
+    ultimoPerdedor = null;
+
+    document.getElementById("currentCard").innerHTML = `
+      <div class="question">Clique em <strong>Sortear rodada</strong> para começar.</div>
+      <div class="pill">Doses: 0</div>
+      <div class="punishment">Prenda: aguardando próxima vítima.</div>
+    `;
+
+    document.getElementById("history").innerHTML = `Nenhuma rodada registrada ainda.`;
+
+    esconderFimDeJogo();
+    renderJogadores();
+    renderPlacar();
+    renderBotoesVoto();
+    limparAviso();
+  }
+
+  function mostrarFimDeJogo(nomeJogador) {
+    document.getElementById("gameOverName").textContent = nomeJogador;
+    document.getElementById("gameOverOverlay").classList.remove("hidden");
+  }
+
+  function esconderFimDeJogo() {
+    document.getElementById("gameOverOverlay").classList.add("hidden");
+  }
+
+  function mostrarAviso(texto) {
+    document.getElementById("warning").innerHTML = `<div class="danger">${texto}</div>`;
+  }
+
+  function limparAviso() {
+    document.getElementById("warning").innerHTML = "";
+  }
+
+  function escapeAspas(texto) {
+    return texto.replace(/'/g, "\\'");
+  }
+
+  document.getElementById("playerName").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      adicionarJogador();
+    }
+  });
+
+  renderJogadores();
+  renderPlacar();
+  renderBotoesVoto();
+</script>
+</body>
+</html>
